@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shoxrux — v2026.08.28 Release Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #060a08;
+    --bg-2: #050705;
+    --panel: #0b1410;
+    --panel-2: #0e1a14;
+    --border: #17281f;
+    --border-soft: #101d17;
+    --green: #34e08a;
+    --green-dim: #1c6b45;
+    --green-glow: rgba(52,224,138,0.35);
+    --amber: #e0b34b;
+    --amber-dim: #6b4f1c;
+    --amber-glow: rgba(224,179,75,0.35);
+    --cyan: #45c6e0;
+    --cyan-dim: #1c5a6b;
+    --cyan-glow: rgba(69,198,224,0.35);
+    --violet: #a389e0;
+    --violet-dim: #453a6b;
+    --violet-glow: rgba(163,137,224,0.35);
+    --red: #e0645a;
+    --text: #e9f5ee;
+    --text-dim: #7d9488;
+    --text-faint: #4b5c53;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --display: 'Sora', sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--display);
+    overflow-x:hidden;
+    position:relative;
+  }
+  ::selection{ background: var(--green-dim); color: var(--text); }
+
+  /* ---------- background grid + vignette ---------- */
+  .grid-bg{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(to right, rgba(52,224,138,0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(52,224,138,0.045) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: radial-gradient(ellipse 90% 70% at 50% 20%, black 40%, transparent 100%);
+  }
+  .vignette{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(52,224,138,0.08), transparent 60%),
+                radial-gradient(ellipse 60% 40% at 100% 100%, rgba(52,224,138,0.05), transparent 60%);
+  }
+
+  /* ---------- curtain intro ---------- */
+  .curtain{
+    position:fixed; inset:0; z-index:100;
+    display:flex; pointer-events:none;
+  }
+  .panel{
+    flex:1; background: #030503;
+    transition: transform 1.05s cubic-bezier(.76,0,.24,1);
+  }
+  .panel.left{ transform: translateX(0); }
+  .panel.right{ transform: translateX(0); }
+  .curtain.open .panel.left{ transform: translateX(-100%); }
+  .curtain.open .panel.right{ transform: translateX(100%); }
+  .flash{
+    position:absolute; top:0; bottom:0; left:50%; width:2px;
+    background: var(--green);
+    box-shadow: 0 0 40px 6px var(--green-glow);
+    transform: translateX(-50%) scaleY(0);
+    opacity:0;
+  }
+  .curtain.open .flash{
+    animation: flashPulse 0.7s ease-out forwards;
+  }
+  @keyframes flashPulse{
+    0%{ transform: translateX(-50%) scaleY(0); opacity:0; }
+    15%{ transform: translateX(-50%) scaleY(1); opacity:1; }
+    60%{ opacity:0.6; }
+    100%{ transform: translateX(-50%) scaleY(1); opacity:0; }
+  }
+
+  /* ---------- scanline ---------- */
+  .scanline{
+    position:fixed; left:0; right:0; height:120px; z-index:40;
+    pointer-events:none;
+    background: linear-gradient(to bottom, transparent, rgba(52,224,138,0.045), transparent);
+    animation: scan 9s linear infinite;
+    animation-delay: 1.4s;
+  }
+  @keyframes scan{
+    0%{ top:-120px; }
+    100%{ top:100vh; }
+  }
+
+  /* ---------- reveal-on-load fade ---------- */
+  .reveal{ opacity:0; transform: translateY(14px); animation: revealUp 0.8s ease forwards; }
+  @keyframes revealUp{ to{ opacity:1; transform:translateY(0);} }
+
+  /* ---------- navbar ---------- */
+  nav{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 16px clamp(20px,5vw,64px);
+    background: rgba(6,10,8,0.55);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .logo-pulse{
+    width:34px; height:34px; border-radius:9px;
+    background: linear-gradient(155deg, var(--panel-2), var(--panel));
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .logo-pulse svg{ width:17px; height:17px; color: var(--green); animation: heartbeat 2.4s ease-in-out infinite; filter: drop-shadow(0 0 5px var(--green-glow)); }
+  @keyframes heartbeat{
+    0%,100%{ transform:scale(1); opacity:0.85; }
+    12%{ transform:scale(1.28); opacity:1; }
+    24%{ transform:scale(0.96); opacity:0.9; }
+    36%{ transform:scale(1.14); opacity:1; }
+    50%{ transform:scale(1); opacity:0.85; }
+  }
+  .brand-text{ font-family: var(--mono); font-size:14px; letter-spacing:0.5px; color:var(--text); }
+  .brand-text b{ color:var(--green); font-weight:600; }
+  .nav-links{ display:flex; gap:28px; }
+  .nav-links a{
+    font-family: var(--mono); font-size:12px; letter-spacing:1.2px; text-transform:uppercase;
+    color: var(--text-dim); text-decoration:none; position:relative;
+    transition:color .25s ease;
+  }
+  .nav-links a:hover{ color: var(--green); }
+  .nav-status{
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:11px; color:var(--text-dim);
+    letter-spacing:0.6px;
+  }
+  .dot-live{
+    width:6px; height:6px; border-radius:50%; background:var(--green);
+    box-shadow:0 0 8px 2px var(--green-glow);
+    animation: dotPulse 1.8s ease-in-out infinite;
+  }
+  @keyframes dotPulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+  @media (max-width:860px){ .nav-links{ display:none; } }
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative; z-index:1;
+    max-width:1320px; margin:0 auto;
+    padding: 88px clamp(20px,5vw,64px) 40px;
+    display:grid; grid-template-columns: 1.15fr 1fr; gap:56px; align-items:center;
+  }
+  @media (max-width:980px){ .hero{ grid-template-columns:1fr; padding-top:56px; } }
+
+  .ecg-wrap{
+    position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+    height:160px; z-index:-1; opacity:0.55; pointer-events:none;
+  }
+  .ecg-path{
+    fill:none; stroke:var(--green); stroke-width:1.6;
+    stroke-dasharray: 1400; stroke-dashoffset:1400;
+    filter: drop-shadow(0 0 6px var(--green-glow));
+    animation: draw 6.5s ease-in-out infinite;
+    animation-delay: 1.6s;
+  }
+  @keyframes draw{
+    0%{ stroke-dashoffset:1400; }
+    55%{ stroke-dashoffset:0; }
+    100%{ stroke-dashoffset:-1400; }
+  }
+
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:2px; text-transform:uppercase;
+    color:var(--green); display:flex; align-items:center; gap:10px; margin-bottom:22px;
+  }
+  .eyebrow::before{ content:''; width:22px; height:1px; background:var(--green); }
+
+  h1{
+    font-family:var(--display); font-weight:700;
+    font-size: clamp(38px, 6vw, 70px);
+    line-height:1.02; letter-spacing:-0.02em;
+    color:var(--text);
+  }
+  .grad{
+    background: linear-gradient(100deg, var(--green) 10%, #8ff5c2 45%, var(--green) 90%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    background-size:220% auto;
+    animation: gradShift 4.5s ease-in-out infinite;
+  }
+  @keyframes gradShift{ 0%,100%{ background-position:0% center; } 50%{ background-position:100% center; } }
+
+  .hero p.sub{
+    margin-top:22px; max-width:520px;
+    font-size:16.5px; line-height:1.65; color:var(--text-dim);
+  }
+  .hero p.sub b{ color:var(--text); font-weight:600; }
+
+  .cta-row{ display:flex; align-items:center; gap:22px; margin-top:36px; flex-wrap:wrap; }
+
+  .beam-btn{
+    position:relative; padding:2px; border-radius:999px;
+    background: var(--border);
+    overflow:hidden;
+    transition: background .3s ease;
+  }
+  .beam-btn::before{
+    content:''; position:absolute; inset:-2px; border-radius:999px;
+    background: conic-gradient(from 0deg, var(--green), transparent 20%, transparent 80%, var(--green));
+    opacity:0; transition: opacity .3s ease;
+    animation: rotateBeam 2.6s linear infinite;
+    animation-play-state: paused;
+  }
+  .beam-btn:hover::before{ opacity:1; animation-play-state: running; }
+  .beam-btn:hover{ background:transparent; }
+  .beam-btn-inner{
+    position:relative; z-index:1;
+    display:flex; align-items:center; gap:10px;
+    background: #081008; border-radius:999px;
+    padding:13px 26px;
+    transition: transform .25s ease;
+  }
+  .beam-btn:hover .beam-btn-inner{ transform: scale(1.015); }
+    font-family:var(--mono); font-size:13px; letter-spacing:0.8px; color:var(--text);
+    text-decoration:none;
+  }
+  .beam-btn-inner svg{ width:14px; height:14px; color:var(--green); }
+  @keyframes rotateBeam{ to{ transform:rotate(360deg); } }
+
+  .age-badge{
+    font-family:var(--mono); font-size:12px; color:var(--text-faint); letter-spacing:0.5px;
+  }
+  .age-badge b{ color:var(--text-dim); }
+
+  /* ---------- dashboard (right side) ---------- */
+  .dash{ position:relative; height:460px; perspective:1400px; }
+  .dash-card{
+    position:absolute; width:230px;
+    background: linear-gradient(160deg, var(--panel-2), var(--panel));
+    border:1px solid var(--border); border-radius:14px;
+    padding:16px 18px;
+    box-shadow: 0 20px 45px -18px rgba(0,0,0,0.7);
+    transform-style:preserve-3d;
+    animation: floaty 6s ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%,100%{ transform: rotateX(6deg) rotateY(-8deg) translateY(0px); }
+    50%{ transform: rotateX(4deg) rotateY(-6deg) translateY(-10px); }
+  }
+  .dash-card .row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .dash-card .label{ font-family:var(--mono); font-size:11.5px; color:var(--text); letter-spacing:0.4px; }
+  .dash-card .stat{ font-family:var(--mono); font-size:11px; color:var(--green); }
+  .bar-track{ height:4px; border-radius:3px; background:var(--border); overflow:hidden; }
+  .bar-fill{ height:100%; background:linear-gradient(90deg, var(--green-dim), var(--green)); border-radius:3px; }
+
+  .c1{ top:0; left:6%; z-index:3; }
+  .c2{ top:150px; left:32%; z-index:4; animation-delay:.6s; width:210px; }
+  .c3{ top:70px; right:2%; z-index:2; animation-delay:1.2s; width:190px; }
+  .c4{ top:310px; left:10%; z-index:2; animation-delay:1.8s; width:200px; }
+  @media (max-width:980px){
+    .dash{ height:auto; display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:10px; }
+    .dash-card{ position:static; width:auto; animation:none; transform:none; }
+  }
+  @media (max-width:560px){ .dash{ grid-template-columns:1fr; } }
+
+  .status-dot{ width:6px; height:6px; border-radius:50%; background:var(--dot,var(--green)); box-shadow:0 0 6px 1px var(--glow,var(--green-glow)); animation:dotPulse 2s ease-in-out infinite; }
+
+  /* accent variants for dashboard cards + tags */
+  .dash-card.accent-green{ --dot:var(--green); --glow:var(--green-glow); --bar-a:var(--green-dim); --bar-b:var(--green); --statc:var(--green); }
+  .dash-card.accent-cyan{ --dot:var(--cyan); --glow:var(--cyan-glow); --bar-a:var(--cyan-dim); --bar-b:var(--cyan); --statc:var(--cyan); border-color:#123038; }
+  .dash-card.accent-amber{ --dot:var(--amber); --glow:var(--amber-glow); --bar-a:var(--amber-dim); --bar-b:var(--amber); --statc:var(--amber); border-color:#3a2c10; }
+  .dash-card.accent-violet{ --dot:var(--violet); --glow:var(--violet-glow); --bar-a:var(--violet-dim); --bar-b:var(--violet); --statc:var(--violet); border-color:#241d3a; }
+  .dash-card .bar-fill{ background:linear-gradient(90deg, var(--bar-a,var(--green-dim)), var(--bar-b,var(--green))); }
+  .dash-card .stat{ color: var(--statc,var(--green)); }
+
+  /* ---------- marquee ---------- */
+  .marquee-wrap{
+    position:relative; z-index:1;
+    border-top:1px solid var(--border-soft); border-bottom:1px solid var(--border-soft);
+    padding:22px 0; overflow:hidden;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  }
+  .marquee-track{
+    display:flex; gap:56px; width:max-content;
+    animation: scroll-x 26s linear infinite;
+  }
+  @keyframes scroll-x{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  .stack-item{
+    display:flex; align-items:center; gap:9px;
+    font-family:var(--mono); font-size:13.5px; color:var(--text-faint);
+    white-space:nowrap;
+  }
+  .stack-item svg{ width:16px; height:16px; color:var(--text-dim); }
+  .stack-item:nth-child(4n+1) svg{ color:var(--green); opacity:0.85; }
+  .stack-item:nth-child(4n+2) svg{ color:var(--cyan); opacity:0.85; }
+  .stack-item:nth-child(4n+3) svg{ color:var(--amber); opacity:0.8; }
+  .stack-item:nth-child(4n+4) svg{ color:var(--violet); opacity:0.85; }
+
+  /* ---------- changelog / diff section ---------- */
+  .log-section{
+    position:relative; z-index:1;
+    max-width:920px; margin:0 auto; padding: 100px clamp(20px,5vw,64px) 60px;
+  }
+  .log-head{ text-align:center; margin-bottom:40px; }
+  .log-head .eyebrow{ justify-content:center; }
+  .log-head h2{
+    font-family:var(--display); font-weight:700; font-size:clamp(26px,4vw,38px);
+    letter-spacing:-0.01em;
+  }
+  .log-head p{ color:var(--text-dim); margin-top:12px; font-size:15px; max-width:520px; margin-inline:auto; }
+
+  .terminal{
+    background: #060c08;
+    border:1px solid var(--border); border-radius:14px;
+    overflow:hidden;
+    box-shadow: 0 30px 70px -30px rgba(0,0,0,0.8);
+  }
+  .terminal-bar{
+    display:flex; align-items:center; gap:8px;
+    padding:12px 16px; border-bottom:1px solid var(--border-soft);
+    background: var(--panel-2);
+  }
+  .tdot{ width:10px; height:10px; border-radius:50%; }
+  .terminal-bar .tdot:nth-child(1){ background:#e0645a44; border:1px solid #e0645a88; }
+  .terminal-bar .tdot:nth-child(2){ background:#e0b34b44; border:1px solid #e0b34b88; }
+  .terminal-bar .tdot:nth-child(3){ background:#34e08a44; border:1px solid #34e08a88; }
+  .terminal-title{ margin-left:8px; font-family:var(--mono); font-size:11.5px; color:var(--text-faint); }
+  .diff-body{ padding:22px 24px; font-family:var(--mono); font-size:13.5px; line-height:2; }
+  .diff-body .cmd{ color:var(--text-dim); margin-bottom:14px; }
+  .diff-body .cmd span{ color:var(--green); }
+  .diff-line{ display:flex; gap:10px; }
+  .diff-line.minus{ color:#a05752; }
+  .diff-line.minus .marker{ color:#e0645a; }
+  .diff-line.plus{ color:#bfe9d2; }
+  .diff-line.plus .marker{ color:var(--green); }
+  .diff-line .marker{ width:14px; flex:none; }
+  .diff-line del{ text-decoration:line-through; opacity:0.85; }
+  .diff-gap{ height:10px; }
+
+  /* ---------- projects ---------- */
+  .proj-grid{
+    display:grid; grid-template-columns: 1.3fr 1fr; gap:18px;
+  }
+  @media (max-width:760px){ .proj-grid{ grid-template-columns:1fr; } }
+  .proj-card{
+    display:block; text-decoration:none; color:inherit;
+    background: linear-gradient(160deg, var(--panel-2), var(--panel));
+    border:1px solid var(--border); border-radius:16px;
+    padding:24px 26px;
+    transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .proj-card:hover{
+    transform: translateY(-4px);
+    border-color: var(--green-dim);
+    box-shadow: 0 20px 50px -22px rgba(52,224,138,0.25);
+  }
+  .proj-card.featured{ border-color: var(--green-dim); }
+  .proj-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .proj-tag{
+    font-family:var(--mono); font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase;
+    color: var(--green); border:1px solid var(--green-dim); border-radius:999px;
+    padding:3px 10px;
+  }
+  .proj-tag.tag-violet{ color:var(--violet); border-color:var(--violet-dim); }
+  .proj-arrow{ width:16px; height:16px; color:var(--text-faint); transition: transform .25s ease, color .25s ease; }
+  .proj-card:hover .proj-arrow{ transform: translate(3px,-3px); color:var(--green); }
+  .proj-name{ font-family:var(--display); font-weight:600; font-size:19px; margin-bottom:8px; }
+  .proj-desc{ font-size:13.5px; line-height:1.6; color:var(--text-dim); margin-bottom:16px; }
+  .proj-stack{ display:flex; flex-wrap:wrap; gap:8px; }
+  .proj-stack span{
+    font-family:var(--mono); font-size:11px; color:var(--text-faint);
+    border:1px solid var(--border); border-radius:6px; padding:3px 8px;
+  }
+
+  /* ---------- footer ---------- */
+  footer{
+    position:relative; z-index:1;
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 28px clamp(20px,5vw,64px) 40px;
+    border-top:1px solid var(--border-soft);
+    font-family:var(--mono); font-size:11.5px; color:var(--text-faint);
+    flex-wrap:wrap; gap:12px;
+  }
+  footer b{ color:var(--text-dim); }
+</style>
+</head>
+<body>
+
+  <div class="curtain" id="curtain">
+    <div class="panel left"></div>
+    <div class="panel right"></div>
+    <div class="flash"></div>
+  </div>
+
+  <div class="grid-bg"></div>
+  <div class="vignette"></div>
+  <div class="scanline"></div>
+
+  <nav class="reveal" style="animation-delay:0.9s">
+    <div class="brand">
+      <div class="logo-pulse">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </div>
+      <div class="brand-text"><b>shoxrux</b>@backend<span style="color:var(--text-faint)"> — v2026.08.28</span></div>
+    </div>
+    <div class="nav-links">
+      <a href="#log">changelog</a>
+      <a href="#stack">stack</a>
+    </div>
+    <div class="nav-status"><span class="dot-live"></span> ONLINE · 1 YEAR OLDER</div>
+  </nav>
+
+  <section class="hero">
+    <div class="ecg-wrap">
+      <svg class="ecg-svg" viewBox="0 0 1200 160" preserveAspectRatio="none" width="100%" height="100%">
+        <path class="ecg-path" d="M0,80 L140,80 L165,80 L180,20 L200,150 L220,80 L260,80 L620,80 L645,80 L660,15 L680,155 L700,80 L740,80 L1200,80" />
+      </svg>
+    </div>
+
+    <div>
+      <div class="eyebrow reveal" style="animation-delay:1.1s">system status: online · build deployed today</div>
+      <h1 class="reveal" style="animation-delay:1.2s">
+        Another year<br/>
+        successfully <span class="grad">deployed</span>.
+      </h1>
+      <p class="sub reveal" style="animation-delay:1.35s">
+        I'm <b>Shoxrux</b>, a backend software engineer working with <b>Python, FastAPI &amp; Go</b> — based in Uzbekistan, building toward a career in the Netherlands. Today isn't a sprint deadline. It's a birthday. Same log format either way.
+      </p>
+      <div class="cta-row reveal" style="animation-delay:1.5s">
+        <a href="#log" class="beam-btn">
+          <span class="beam-btn-inner">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            view changelog
+          </span>
+        </a>
+        <div class="age-badge">commit <b>#birthday</b> · uptime: <b>+1 year</b></div>
+      </div>
+    </div>
+
+    <div class="dash reveal" style="animation-delay:1.4s">
+      <div class="dash-card c1 accent-green">
+        <div class="row"><span class="label">fastapi</span><span class="status-dot"></span></div>
+        <div class="row"><span class="stat">production-ready</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:86%"></div></div>
+      </div>
+      <div class="dash-card c2 accent-cyan">
+        <div class="row"><span class="label">docker + ci/cd</span><span class="status-dot"></span></div>
+        <div class="row"><span class="stat">git actions · daily</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:78%"></div></div>
+      </div>
+      <div class="dash-card c3 accent-amber">
+        <div class="row"><span class="label">english</span><span class="stat">▲ upper-inter</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:70%"></div></div>
+      </div>
+      <div class="dash-card c4 accent-violet">
+        <div class="row"><span class="label">role</span><span class="stat">junior → strong jr</span></div>
+        <div class="row" style="margin-top:2px"><span class="stat" style="color:var(--text-faint)">go · redis · sql · drf</span></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="marquee-wrap" id="stack">
+    <div class="marquee-track" id="marqueeTrack"></div>
+  </div>
+
+  <section class="log-section" id="log">
+    <div class="log-head reveal">
+      <div class="eyebrow">git log --oneline --stat</div>
+      <h2>The year in commits.</h2>
+      <p>No hype, no shortcuts — just what actually shipped between last birthday and this one.</p>
+    </div>
+
+    <div class="terminal reveal" style="animation-delay:0.15s">
+      <div class="terminal-bar">
+        <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+        <span class="terminal-title">shoxrux — year.diff</span>
+      </div>
+      <div class="diff-body">
+        <div class="cmd">$ git diff <span>last-birthday..today</span></div>
+
+        <div class="diff-line minus"><span class="marker">-</span><del>believing money comes without deep, structured learning</del></div>
+        <div class="diff-line minus"><span class="marker">-</span><del>no real backend stack, no shipped projects</del></div>
+        <div class="diff-line minus"><span class="marker">-</span><del>English stuck below intermediate</del></div>
+        <div class="diff-gap"></div>
+        <div class="diff-line plus"><span class="marker">+</span>FastAPI, Django REST Framework, SQL &amp; Redis in real use</div>
+        <div class="diff-line plus"><span class="marker">+</span>Docker + Git CI/CD as a default workflow, not a buzzword</div>
+        <div class="diff-line plus"><span class="marker">+</span>Go added to the stack — early, but growing</div>
+        <div class="diff-line plus"><span class="marker">+</span>logistics domain knowledge picked up from real work</div>
+        <div class="diff-line plus"><span class="marker">+</span>10+ projects pushed to GitHub, one commit at a time</div>
+        <div class="diff-line plus"><span class="marker">+</span>English → upper-intermediate</div>
+        <div class="diff-line plus"><span class="marker">+</span>self-rating: junior → strong junior</div>
+        <div class="diff-gap"></div>
+        <div class="cmd" style="margin-top:6px;margin-bottom:0">$ echo <span>"deployed and stable."</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="log-section" id="projects" style="padding-top:20px;">
+    <div class="log-head reveal">
+      <div class="eyebrow">repositories</div>
+      <h2>Shipped, not just started.</h2>
+      <p>A few things worth pulling.</p>
+    </div>
+
+    <div class="proj-grid reveal">
+      <a href="https://github.com/Shoxrux333/restosaas" target="_blank" rel="noopener" class="proj-card featured">
+        <div class="proj-top">
+          <div class="proj-tag">flagship</div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="proj-arrow"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </div>
+        <div class="proj-name">RestoSaaS</div>
+        <div class="proj-desc">Multi-tenant restaurant platform — Django, DRF, PostgreSQL, Redis, Celery, WebSockets, Telegram bot, QR table ordering.</div>
+        <div class="proj-stack">
+          <span>Django</span><span>DRF</span><span>PostgreSQL</span><span>Redis</span><span>Celery</span>
+        </div>
+      </a>
+
+      <a href="https://github.com/Shoxrux333" target="_blank" rel="noopener" class="proj-card">
+        <div class="proj-top">
+          <div class="proj-tag tag-violet">profile</div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="proj-arrow"><path d="M7 17 17 7M7 7h10v10"/></svg>
+        </div>
+        <div class="proj-name">github.com/Shoxrux333</div>
+        <div class="proj-desc">10+ repositories — FastAPI services, Go experiments, and everything else that didn't make the front page.</div>
+        <div class="proj-stack">
+          <span>Python</span><span>FastAPI</span><span>Go</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <footer class="reveal">
+    <div>© 2026 <b>shoxrux</b> — backend engineer, still building.</div>
+    <div style="display:flex; gap:18px; align-items:center;">
+      <a href="https://github.com/Shoxrux333" target="_blank" rel="noopener" style="color:var(--text-dim); text-decoration:none;">github</a>
+      <span>status: <b style="color:var(--green)">online</b> · next release: <b>v2027.08.28</b></span>
+    </div>
+  </footer>
+
+<script>
+  // curtain intro
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('curtain').classList.add('open');
+    }, 350);
+  });
+
+  // marquee content, duplicated for seamless loop
+  const stack = [
+    ['FastAPI', 'M13 2 3 14h9l-1 8 10-12h-9l1-8z'],
+    ['Docker', 'M3 12h18M3 6h18M3 18h18'],
+    ['Redis', 'M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'],
+    ['PostgreSQL / SQL', 'M4 6h16M4 12h16M4 18h10'],
+    ['Django REST', 'M12 2v20M2 12h20'],
+    ['Go', 'M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2z'],
+    ['Git / CI-CD', 'M6 3v12M6 21a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 9v6a4 4 0 0 1-4 4H8'],
+    ['Python', 'M12 2C6 2 6 6 6 6v3h6v1H4s-2 0-2 5 2 5 2 5h2v-3s0-2 2-2h4s4 0 4-4V6s0-4-4-4z'],
+  ];
+  const track = document.getElementById('marqueeTrack');
+  function renderStack(){
+    let html = '';
+    for(let i=0;i<2;i++){
+      stack.forEach(([name, d]) => {
+        html += '<div class="stack-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + d + '"/></svg>' + name + '</div>';
+      });
+    }
+    track.innerHTML = html;
+  }
+  renderStack();
+</script>
+</body>
+</html>
